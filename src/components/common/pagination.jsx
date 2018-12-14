@@ -1,8 +1,18 @@
 // libraries
 import React, { Component } from 'react';
+// {https://reactjs.org/docs/typechecking-with-proptypes.html}
+import PropTypes from 'prop-types';
 import _ from 'lodash';
 
 export default class Pagination extends Component {
+  // checking properties Type
+  static propTypes = {
+    itemsCount: PropTypes.number.isRequired,
+    pageSize: PropTypes.number.isRequired,
+    currentPage: PropTypes.number.isRequired,
+    onPageChange: PropTypes.func.isRequired
+  };
+
   render() {
     const { itemsCount, pageSize, currentPage, onPageChange } = this.props;
 

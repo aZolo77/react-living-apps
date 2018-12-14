@@ -1,3 +1,3 @@
-# Living React App based on {https://coursehunters.net/course/mastering-react-mosh-hamedani}
+# Living React Apps based on https://coursehunters.net/course/mastering-react-mosh-hamedani
 
-- video 70 [LSH]
+- video 79 [Filtering]
