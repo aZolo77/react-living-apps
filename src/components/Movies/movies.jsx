@@ -1,8 +1,9 @@
 // libraries
 import React, { Component } from 'react';
+import _ from 'lodash';
 
 // components
-import Like from '../common/like';
+import MoviesTable from '../MovieTable/moviesTable';
 import Pagination from '../common/pagination';
 import ListGroup from '../common/listGroup';
 
@@ -20,11 +21,12 @@ export default class Movies extends Component {
     genres: [],
     pageSize: 4,
     currentPage: 1,
-    selectedGenre: null
+    selectedGenre: null,
+    sortColumn: { path: 'title', order: 'asc' }
   };
 
   componentDidMount = () => {
-    const genres = [{ name: 'All Genres' }, ...getGenres()];
+    const genres = [{ _id: '', name: 'All Genres' }, ...getGenres()];
 
     this.setState({
       movies: getMovies(),
@@ -34,15 +36,17 @@ export default class Movies extends Component {
 
   render() {
     const { length: moviesCount } = this.state.movies;
-    const { movies, currentPage, pageSize, genres, selectedGenre } = this.state;
 
-    // if Movies are filtered by Genre
-    const filtered =
-      selectedGenre && selectedGenre._id
-        ? movies.filter(m => m.genre._id === selectedGenre._id)
-        : movies;
+    const {
+      currentPage,
+      pageSize,
+      genres,
+      selectedGenre,
+      sortColumn
+    } = this.state;
 
-    const moviesList = paginate(filtered, currentPage, pageSize);
+    // get filtered, sorted and paginated Data
+    const { totalCount, data } = this.getPagedData();
 
     return (
       <div className="container">
@@ -61,50 +65,17 @@ export default class Movies extends Component {
             </div>
             <div className="col-9">
               <p>
-                Showing <b>{filtered.length}</b> movies in the List
+                Showing <b>{totalCount}</b> movies in the List
               </p>
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th scope="col">Title</th>
-                    <th scope="col">Genre</th>
-                    <th scope="col">Stock</th>
-                    <th scope="col">Rate</th>
-                    <th scope="col" />
-                    <th scope="col" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {moviesList.map(movie => {
-                    return (
-                      <tr key={movie._id}>
-                        <th scope="row">{movie.title}</th>
-                        <td>{movie.genre.name}</td>
-                        <td>{movie.numberInStock}</td>
-                        <td>{movie.dailyRentalRate}</td>
-                        <td>
-                          {
-                            <Like
-                              liked={movie.liked}
-                              onLikeClick={() => this.handleLikedClick(movie)}
-                            />
-                          }
-                        </td>
-                        <td>
-                          <button
-                            className="btn btn-large btn-outline-danger"
-                            onClick={() => this.handleDelete(movie._id)}
-                          >
-                            Delete
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+              <MoviesTable
+                moviesList={data}
+                onLike={this.handleLikedClick}
+                onDelete={this.handleDelete}
+                onSort={this.handleSort}
+                sortColumn={sortColumn}
+              />
               <Pagination
-                itemsCount={filtered.length}
+                itemsCount={totalCount}
                 currentPage={currentPage}
                 pageSize={pageSize}
                 onPageChange={this.handlePageChange}
@@ -115,6 +86,38 @@ export default class Movies extends Component {
       </div>
     );
   }
+
+  // Filtering, Sorting and Paginating Data
+  getPagedData = () => {
+    const {
+      movies,
+      currentPage,
+      pageSize,
+      selectedGenre,
+      sortColumn
+    } = this.state;
+
+    // 1. Filtering
+    const filtered =
+      selectedGenre && selectedGenre._id
+        ? movies.filter(m => m.genre._id === selectedGenre._id)
+        : movies;
+
+    // 2. Sorting (сортирует элементы массива по имени, передаваемому во втором аргументе)
+    const sorted = _.orderBy(filtered, [sortColumn.path], [sortColumn.order]);
+
+    // 3. Paginating
+    const moviesList = paginate(sorted, currentPage, pageSize);
+
+    return { totalCount: filtered.length, data: moviesList };
+  };
+
+  // Sort movies List
+  handleSort = sortColumn => {
+    this.setState({
+      sortColumn
+    });
+  };
 
   // Filter Movies List by Genre
   handleGenreSelect = genre => {

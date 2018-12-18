@@ -31,9 +31,9 @@ export default class Pagination extends Component {
               }
               key={page}
             >
-              <a className="page-link" onClick={() => onPageChange(page)}>
+              <span className="page-link" onClick={() => onPageChange(page)}>
                 {page}
-              </a>
+              </span>
             </li>
           ))}
         </ul>
