@@ -1,15 +1,18 @@
 // libraries
 import React, { Component } from 'react';
+import { Link } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import _ from 'lodash';
 
 // components
 import MoviesTable from '../MovieTable/moviesTable';
 import Pagination from '../common/pagination';
 import ListGroup from '../common/listGroup';
+import SearchBox from '../SearchBox/searchBox';
 
 // services
-import { getMovies } from '../../services/fakeMovieService';
-import { getGenres } from '../../services/fakeGenreService';
+import { getMovies, deleteMovie } from '../../services/movieService';
+import { getGenres } from '../../services/genreService';
 import { paginate } from '../../utils/paginate';
 
 // styles
@@ -21,15 +24,22 @@ export default class Movies extends Component {
     genres: [],
     pageSize: 4,
     currentPage: 1,
+    searchQuery: '',
     selectedGenre: null,
     sortColumn: { path: 'title', order: 'asc' }
   };
 
-  componentDidMount = () => {
-    const genres = [{ _id: '', name: 'All Genres' }, ...getGenres()];
+  componentDidMount = async () => {
+    const { data } = await getGenres();
+    // console.log(data);
+
+    const genres = [{ _id: '', name: 'All Genres' }, ...data];
+
+    const { data: movies } = await getMovies();
+    // console.log(movies.data);
 
     this.setState({
-      movies: getMovies(),
+      movies,
       genres
     });
   };
@@ -42,7 +52,8 @@ export default class Movies extends Component {
       pageSize,
       genres,
       selectedGenre,
-      sortColumn
+      sortColumn,
+      searchQuery
     } = this.state;
 
     // get filtered, sorted and paginated Data
@@ -64,9 +75,13 @@ export default class Movies extends Component {
               />
             </div>
             <div className="col-9">
+              <Link to="/movies/new" className="btn btn-primary mb-4">
+                New Movie
+              </Link>
               <p>
                 Showing <b>{totalCount}</b> movies in the List
               </p>
+              <SearchBox value={searchQuery} onChange={this.handleSearch} />
               <MoviesTable
                 moviesList={data}
                 onLike={this.handleLikedClick}
@@ -94,14 +109,21 @@ export default class Movies extends Component {
       currentPage,
       pageSize,
       selectedGenre,
-      sortColumn
+      sortColumn,
+      searchQuery
     } = this.state;
 
     // 1. Filtering
-    const filtered =
-      selectedGenre && selectedGenre._id
-        ? movies.filter(m => m.genre._id === selectedGenre._id)
-        : movies;
+    let filtered = movies;
+    if (searchQuery) {
+      // by search query
+      filtered = movies.filter(m =>
+        m.title.toLowerCase().startsWith(searchQuery.toLowerCase())
+      );
+    } else if (selectedGenre && selectedGenre._id) {
+      // by genre
+      filtered = movies.filter(m => m.genre._id === selectedGenre._id);
+    }
 
     // 2. Sorting (сортирует элементы массива по имени, передаваемому во втором аргументе)
     const sorted = _.orderBy(filtered, [sortColumn.path], [sortColumn.order]);
@@ -121,12 +143,17 @@ export default class Movies extends Component {
 
   // Filter Movies List by Genre
   handleGenreSelect = genre => {
-    this.setState({ selectedGenre: genre, currentPage: 1 });
+    this.setState({ selectedGenre: genre, currentPage: 1, searchQuery: '' });
   };
 
   // Paginate through pages
   handlePageChange = page => {
     this.setState({ currentPage: page });
+  };
+
+  // Search handler
+  handleSearch = query => {
+    this.setState({ searchQuery: query, selectedGenre: null, currentPage: 1 });
   };
 
   // Handle Like
@@ -144,8 +171,20 @@ export default class Movies extends Component {
   };
 
   // Delet movie from the List
-  handleDelete = movieId => {
-    const movies = this.state.movies.filter(movie => movie._id !== movieId);
+  handleDelete = async movieId => {
+    const originalMovies = this.state.movies;
+
+    const movies = originalMovies.filter(movie => movie._id !== movieId);
     this.setState({ movies });
+
+    try {
+      await deleteMovie(movieId);
+    } catch (ex) {
+      if (ex.response && ex.response.status === 404) {
+        toast.error('This movie has already been deleted');
+      }
+      // undo changes
+      this.setState({ movies: originalMovies });
+    }
   };
 }
