@@ -44,11 +44,14 @@ export default class MovieForm extends Form {
   };
 
   render() {
-    const { match } = this.props;
-
     return (
       <div>
-        <h3>Movie Form: {match.params.id}</h3>
+        <h3>
+          Movie Form:{' '}
+          <mark>
+            {this.state.data.title ? this.state.data.title : 'New Movie'}
+          </mark>
+        </h3>
         <form onSubmit={this.handleSubmit}>
           {this.renderInput('title', 'Title')}
           {this.renderSelect('genreId', 'Genre', this.state.genres)}

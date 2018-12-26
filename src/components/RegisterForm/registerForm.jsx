@@ -1,9 +1,14 @@
 // libraries
 import React from 'react';
 import Joi from 'joi-browser';
+import { toast } from 'react-toastify';
 
 // components
 import Form from '../common/form';
+
+// services
+import * as userService from '../../services/userService';
+import auth from '../../services/authService';
 
 export default class RegisterForm extends Form {
   state = {
@@ -40,8 +45,19 @@ export default class RegisterForm extends Form {
     );
   }
 
-  doSubmit = () => {
-    // Call the Server to Log In
-    console.log('Submit: ', this.state.data);
+  // Register new User
+  doSubmit = async () => {
+    try {
+      const response = await userService.register(this.state.data);
+      auth.loginWithJwt(response.headers['x-auth-token']);
+      window.location = '/';
+      toast.success(`${this.state.data.name} was registered.`);
+    } catch (ex) {
+      if (ex.response && ex.response.status === 400) {
+        const errors = { ...this.state.errors };
+        errors.username = ex.response.data;
+        this.setState({ errors });
+      }
+    }
   };
 }

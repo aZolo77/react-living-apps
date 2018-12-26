@@ -56,6 +56,8 @@ export default class Movies extends Component {
       searchQuery
     } = this.state;
 
+    const { user } = this.props;
+
     // get filtered, sorted and paginated Data
     const { totalCount, data } = this.getPagedData();
 
@@ -75,9 +77,11 @@ export default class Movies extends Component {
               />
             </div>
             <div className="col-9">
-              <Link to="/movies/new" className="btn btn-primary mb-4">
-                New Movie
-              </Link>
+              {user && user.isAdmin && (
+                <Link to="/movies/new" className="btn btn-primary mb-4">
+                  New Movie
+                </Link>
+              )}
               <p>
                 Showing <b>{totalCount}</b> movies in the List
               </p>

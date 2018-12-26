@@ -1,9 +1,14 @@
 // libraries
 import React from 'react';
 import Joi from 'joi-browser';
+import { toast } from 'react-toastify';
+import { Redirect } from 'react-router-dom';
 
 // components
 import Form from '../common/form';
+
+// services
+import auth from '../../services/authService';
 
 export default class LoginForm extends Form {
   state = {
@@ -14,7 +19,6 @@ export default class LoginForm extends Form {
   // Joi validation schema
   schema = {
     username: Joi.string()
-      .alphanum()
       .min(3)
       .max(30)
       .required()
@@ -25,6 +29,8 @@ export default class LoginForm extends Form {
   };
 
   render() {
+    if (auth.getCurrentUser()) return <Redirect to="/" />;
+
     return (
       <div>
         <h3>Login</h3>
@@ -37,8 +43,24 @@ export default class LoginForm extends Form {
     );
   }
 
-  doSubmit = () => {
-    // Call the Server to Log In
-    console.log('Submit: ', this.state.data);
+  // Call the Server to Login
+  doSubmit = async () => {
+    try {
+      const { username, password } = this.state.data;
+      await auth.login(username, password);
+
+      const { state } = this.props.location;
+
+      // redirect to page from location state [prop from protectedRoute]
+      window.location = state ? state.from.pathname : '/';
+    } catch (ex) {
+      if (ex.response && ex.response.status === 400) {
+        const errors = { ...this.state.errors };
+        errors.username = ex.response.data;
+        this.setState({ errors });
+
+        toast.error(ex.response.data);
+      }
+    }
   };
 }

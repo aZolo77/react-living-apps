@@ -3,7 +3,6 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 
 // services
-
 import logger from './logService';
 
 // Interceptors usage to handle unexpected errors (ex: network down, server down, DB down, bug)
@@ -22,9 +21,15 @@ axios.interceptors.response.use(null, error => {
   return Promise.reject(error);
 });
 
+function setJwt(jwt) {
+  // setting headers on all requests
+  axios.defaults.headers.common['x-auth-token'] = jwt;
+}
+
 export default {
   get: axios.get,
   post: axios.post,
   put: axios.put,
-  delete: axios.delete
+  delete: axios.delete,
+  setJwt
 };

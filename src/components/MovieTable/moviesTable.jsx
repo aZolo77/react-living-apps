@@ -6,6 +6,9 @@ import { Link } from 'react-router-dom';
 import Table from '../common/table';
 import Like from '../common/like';
 
+// services
+import auth from '../../services/authService';
+
 export default class MoviesTable extends Component {
   // an object for rendering columns in Child Components
   columns = [
@@ -25,19 +28,26 @@ export default class MoviesTable extends Component {
           onLikeClick={() => this.props.onLike(movie)}
         />
       )
-    },
-    {
-      key: 'delete',
-      content: movie => (
-        <button
-          className="btn btn-large btn-outline-danger"
-          onClick={() => this.props.onDelete(movie._id)}
-        >
-          Delete
-        </button>
-      )
     }
   ];
+
+  deleteColumn = {
+    key: 'delete',
+    content: movie => (
+      <button
+        className="btn btn-large btn-outline-danger"
+        onClick={() => this.props.onDelete(movie._id)}
+      >
+        Delete
+      </button>
+    )
+  };
+
+  constructor() {
+    super();
+    const user = auth.getCurrentUser();
+    if (user && user.isAdmin) this.columns.push(this.deleteColumn);
+  }
 
   render() {
     const { moviesList, sortColumn, onSort } = this.props;
